@@ -15,7 +15,6 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-
 @Singleton
 @ServerEndpoint("/ws/{username}")
 @LocalBean
@@ -26,6 +25,13 @@ public class WSEndPoint {
 	@OnOpen
 	public void onOpen(Session session, @PathParam("username")String username) {
 		if (!sessions.containsValue(session)) {
+			try {
+				for (Map.Entry<String, Session> entry : sessions.entrySet()) {
+		       		entry.getValue().getBasicRemote().sendText("USER_LOGGED_IN");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			sessions.put(username, session);
 		}
 	}
@@ -44,10 +50,18 @@ public class WSEndPoint {
 			e.printStackTrace();
 		}
 	}
+	
 
 	@OnClose
 	public void close(Session session, @PathParam("username")String username) {
 		sessions.remove(username);
+		try {
+			for (Map.Entry<String, Session> entry : sessions.entrySet()) {
+	       		entry.getValue().getBasicRemote().sendText("USER_LOGGED_OUT");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@OnError

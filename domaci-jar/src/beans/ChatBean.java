@@ -8,6 +8,7 @@ import javax.annotation.Resource;
 import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.jms.ConnectionFactory;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSender;
@@ -146,8 +147,7 @@ public class ChatBean implements ChatRemote, ChatLocal {
 			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
 			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueSender sender = session.createSender(queue);
-			TextMessage message = session.createTextMessage();
-			message.setText(text.getContent());
+			ObjectMessage message = session.createObjectMessage(text);
 			sender.send(message);
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -173,9 +173,8 @@ public class ChatBean implements ChatRemote, ChatLocal {
 			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
 			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueSender sender = session.createSender(queue);
-			TextMessage message = session.createTextMessage();
-			message.setText(text.getContent());
-			
+			ObjectMessage message = session.createObjectMessage(text);
+
 			message.setStringProperty("reciever", text.getReciever().getUsername());
 			message.setStringProperty("sender", text.getSender().getUsername());
 			

@@ -18,31 +18,17 @@ Vue.component('homepage', {
 			<div>
 			<div v-if="logged">
 				<h3>Logged In Users</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>Username</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="user in loggedUsers">
-							<td>{{user.username}}</td>
-						</tr>
-					</tbody>
-				</table>
+				<div id="loggedInUsers">
+					<div v-for="user in loggedUsers">
+						<div>{{user.username}}</div>
+					</div>		
+				</div>
 				<h3>Registered Users</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>Username</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="user in registeredUsers">
-							<td>{{user.username}}</td>
-						</tr>
-					</tbody>
-				</table>
+				<div id="registeredUsers">
+					<div v-for="user in registeredUsers">
+						<div>{{user.username}}</div>
+					</div>		
+				</div>
 				<div>
 					<h3>Send Message</h3>
 					<form method="post" v-on:submit.prevent="sendMessage">
@@ -59,10 +45,12 @@ Vue.component('homepage', {
 						<button type="submit">Send</button>
 					</form>
 					<h3>Chat</h3>	
-					<div id="consoleLog"></div>
-					<h3>User messages</h3>
-					<div id="messages" v-for="msg in messages">
-						<div>{{msg.content}}</div>
+					<div id="consoleLog">
+						<div v-for="msg in messages">
+							<div>
+								[{{new Date(msg.date).toLocaleString()}}] {{msg.sender.username}}: {{msg.content}}
+							</div>
+						</div>
 					</div>
 				</div>			
 			</div>
@@ -74,7 +62,7 @@ Vue.component('homepage', {
 	mounted: function() {
 		var a = this;
 		var user = localStorage.getItem("user");
-		
+
 		if (!(user === null)) {
 			axios.get('rest/chat/users/loggedIn')
 			.then(function(response) {
@@ -103,34 +91,58 @@ Vue.component('homepage', {
 			
 		
 			var socket;
-			var host = "ws://localhost:8080/domaci-war/ws/" + user;
+			var host = "ws://" + window.location.host + "/domaci-war/ws/" + user;
+			
+			this.$store.commit('openSocket', {
+				newHost: host
+			});
+			
 			try{
-			    socket = new WebSocket(host);
-			    console.log('connect: Socket Status: '+socket.readyState);
+//			    socket = new WebSocket(host);
+			    console.log('connect: Socket Status: '+this.$store.state.socket.readyState);
 			
-			    socket.onopen = function(){
-			   	 	console.log('onopen: Socket Status: '+socket.readyState+' (open)');
+			    this.$store.state.socket.onopen = function(){
+//			   	 	console.log('onopen: Socket Status: '+this.$store.state.socket.readyState+' (open)');
 			    }
 			
-			    socket.onmessage = function(msg){
-					let message = msg.data;
-					let messageElem = document.createElement('div');
-					messageElem.textContent = message;
-				    
-			   	 	console.log('onmessage: Received: '+ msg.data);
-			   	 	document.getElementById('consoleLog').append(messageElem);
+			    this.$store.state.socket.onmessage = function(msg){
+			    	var users = document.getElementById('loggedInUsers');
+		    		var temp = null;
+			    	if (msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT") {
+			    		axios.get('rest/chat/users/loggedIn')
+						.then(function(response) {
+							a.loggedUsers = response.data;
+							temp = response.data;
+						})
+						.catch(function(error) {
+							alert(error.response.data);
+						});
+			    	} else {
+						let message = JSON.parse(msg.data);
+						let messageElem = document.createElement('div');
+						messageElem.textContent = "[" + new Date(message.date).toLocaleString() + "] " 
+												+ message.sender.username + ":" + message.content;
+//				   	 	console.log('onmessage: Received: '+ msg.data);
+				   	 	document.getElementById('consoleLog').append(messageElem);
+			    	}
+			    	if ((msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT") && temp != null) {
+			    		var html = "";
+			    		for (let i = 0; i < temp.length; i++) {
+			    			html += "<div>" + temp[i].username + "</div>"
+			    		}
+			    		users.innerHTML = html;
+			    	}
 			    }
-			
-			    socket.onclose = function(){
-			    	socket = null;
+			    this.$store.state.socket.onclose = function(){
+//			    	this.$store.commit('closeSocket');
+//			    	socket = null;
 			    }			
-			
 			} catch(exception){
 			   	console.log('Error'+exception);
 			}
 			
-			a.socket = socket;
-			a.host = host;
+			a.socket = this.$store.state.socket;
+			a.host = this.$store.state.host;
 		}
 	},
 	methods: {
@@ -159,7 +171,6 @@ Vue.component('homepage', {
 					a.subject = "";
 					a.content = "";
 					a.reciever = "";
-					alert("Message sent!");
 				})
 				.catch(function(error) {
 					alert(error.response.data);
@@ -177,7 +188,6 @@ Vue.component('homepage', {
 					.then(function(response) {
 						a.subject = "";
 						a.content = "";
-						alert("Message sent!");
 					})
 					.catch(function(error) {
 						alert(error.response.data);

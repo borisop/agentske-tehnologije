@@ -27,4 +27,8 @@ public class Host implements Serializable{
 		this.alias = alias;
 		this.address = address;
 	}
+	
+	public Host() {
+		
+	}
 }

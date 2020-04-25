@@ -17,17 +17,25 @@ Vue.component('login', {
 		`,
 	methods: {
 		login: function() {
-			var user = {
-				"username": this.username,
-				"password": this.password
+			var a = this;
+			
+			var h = window.location.host;
+			var res = h.split(":");
+			
+			var host = {
+				"alias": res[0],
+				"address": res[1]
 			}
 			
-			var a = this;
+			var user = {
+				"username": a.username,
+				"password": a.password,
+				"host": host
+			}
 				
 			axios.post('rest/chat/users/login', user)
 				.then(function(response) {
 					window.location.href = "#/";
-					alert("Successful login!");
 					a.username = undefined;
 					a.password = undefined;
 					app.logged = true;
