@@ -47,14 +47,6 @@ var app = new Vue({
 	mounted: function() {
 		if (localStorage.getItem("user") === null) {
 			this.logged = false;
-			try {
-				this.$store.state.socket.onclose = function(){
-//		    	this.$store.commit('closeSocket');
-		    	socket = null;
-		    }			
-			} catch(exception){
-				console.log('Error'+exception);
-			}
 		} else {
 			this.logged = true;
 		}
@@ -70,10 +62,9 @@ var app = new Vue({
 			axios.delete('rest/chat/users/loggedIn/' + user)
 				.then(function(response) {
 					router.push('/login');
-					alert("You logged out!")
 				})
 				.catch(function(error) {
-					alert(error.response.data)
+					alert(error.response.data);
 				});
 		}
 	}

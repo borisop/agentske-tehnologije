@@ -9,53 +9,53 @@ Vue.component('homepage', {
 			content: "",
 			subject: "",
 			reciever: "",
-			messageType: null,
 			messages: null
 		}
 	},
 	template:
 		`
-			<div>
-			<div v-if="logged">
-				<h3>Logged In Users</h3>
-				<div id="loggedInUsers">
-					<div v-for="user in loggedUsers">
-						<div>{{user.username}}</div>
-					</div>		
-				</div>
-				<h3>Registered Users</h3>
-				<div id="registeredUsers">
-					<div v-for="user in registeredUsers">
-						<div>{{user.username}}</div>
-					</div>		
-				</div>
-				<div>
-					<h3>Send Message</h3>
-					<form method="post" v-on:submit.prevent="sendMessage">
-						<label>
-							<strong>Message Type</strong>
-							<select v-model="messageType">
-								<option>All</option>
-								<option>Private</option>
-							</select>
-						</label> <br/>
-						<label v-if="messageType==='Private'">To:</label><input v-if="messageType==='Private'" type="text" required v-model="reciever"> <br/>
-						<label>Subject:</label><input type="text" required v-model="subject"> <br/>
-						<label>Content:</label><input type="text" required v-model="content"> <br/>
-						<button type="submit">Send</button>
-					</form>
-					<h3>Chat</h3>	
-					<div id="consoleLog">
-						<div v-for="msg in messages">
-							<div>
-								[{{new Date(msg.date).toLocaleString()}}] {{msg.sender.username}}: {{msg.content}}
+		<div id="master-wrap">
+			<div class="container">
+				<div v-if="logged">
+					<div class="content-wrap loggedUsersPanel">
+						<h1>Online</h1>
+						<div id="loggedInUsers">
+							<div v-for="user in loggedUsers">
+								<div class="users-logged"><label class="username">{{user.username}}</label></div>
 							</div>
 						</div>
+						<!--<h1>Offline</h1>
+						<div id="registeredUsers">
+							<div v-for="user in registeredUsers">
+								<div class="users-registered"><label class="username">{{user.username}}</label></div>
+							</div>				
+						</div>--->
 					</div>
-				</div>			
-			</div>
-			<div v-else>
-				<h1>Register or login to send messages</h1>
+					<div class="content-wrap sendMessage">
+						<div class="message-form">
+							<h1>Compose Message</h1>
+							<form id="composeMessageForm" class="box" method="post" v-on:submit.prevent="sendMessage">
+								<input class="txtb" placeholder="To" type="text" v-model="reciever">
+								<input class="txtb" type="text" placeholder="Subject" required v-model="subject">
+								<input class="txtb" type="text" placeholder="Content" required v-model="content">
+								<input class="signup-btn" type="submit" value="Send">
+							</form>
+						</div>
+					</div>
+					<div class="content-wrap chat">
+						<h1>Chat</h1>	
+						<div id="consoleLog">
+							<div v-for="msg in messages">
+								<div class="message-container">
+									[{{new Date(msg.date).toLocaleString()}}] {{msg.sender.username}}: {{msg.content}}
+								</div>
+							</div>
+						</div>
+					</div>			
+				</div>
+				<div class="content-wrap" v-else>
+					<h1>Sign in to send messages</h1>
+				</div>
 			</div>
 		</div>
 		`,
@@ -122,13 +122,14 @@ Vue.component('homepage', {
 						let messageElem = document.createElement('div');
 						messageElem.textContent = "[" + new Date(message.date).toLocaleString() + "] " 
 												+ message.sender.username + ":" + message.content;
+						messageElem.classList.add("message-container")
 //				   	 	console.log('onmessage: Received: '+ msg.data);
 				   	 	document.getElementById('consoleLog').append(messageElem);
 			    	}
 			    	if ((msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT") && temp != null) {
 			    		var html = "";
 			    		for (let i = 0; i < temp.length; i++) {
-			    			html += "<div>" + temp[i].username + "</div>"
+			    			html += `<div class="users-logged"><label class="username">` + temp[i].username + "</label></div>"
 			    		}
 			    		users.innerHTML = html;
 			    	}
@@ -143,6 +144,7 @@ Vue.component('homepage', {
 			
 			a.socket = this.$store.state.socket;
 			a.host = this.$store.state.host;
+//			a.offlineUsers = difference(a.registeredUsers, a.loggedUsers);
 		}
 	},
 	methods: {
@@ -157,26 +159,7 @@ Vue.component('homepage', {
 			
 			
 			
-			if (a.messageType === "Private") {
-				message = {
-					"reciever": rec,
-					"sender": sender,
-					"date": new Date(),
-					"subject": a.subject,
-					"content": a.content
-				}
-				
-				axios.post('rest/chat/messages/user', message)
-				.then(function(response) {
-					a.subject = "";
-					a.content = "";
-					a.reciever = "";
-				})
-				.catch(function(error) {
-					alert(error.response.data);
-				});
-				
-			} else {
+			if (a.reciever === "") {	
 				var message = {
 					"reciever": null,
 					"sender": sender,
@@ -191,6 +174,22 @@ Vue.component('homepage', {
 					})
 					.catch(function(error) {
 						alert(error.response.data);
+				});			
+			} else {
+				message = {
+					"reciever": rec,
+					"sender": sender,
+					"date": new Date(),
+					"subject": a.subject,
+					"content": a.content
+				}
+				
+				axios.post('rest/chat/messages/user', message)
+				.then(function(response) {
+					document.getElementById("composeMessageForm").reset();
+				})
+				.catch(function(error) {
+					alert(error.response.data);
 				});
 			}
 		}
