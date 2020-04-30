@@ -1,0 +1,111 @@
+*{
+    margin: 0;
+    padding: 0;
+    font-family: "montserrat", sans-serif;
+}
+
+body{
+    margin: 0;
+    padding: 0;
+}
+
+.signup-form{
+    width: 450px;
+    padding: 40px;
+    text-align: center;
+    background: #343a40;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    overflow: hidden;
+}
+.signup-form h1{
+    align-content: center;
+    margin: 20px;
+    color: #9a9da0;
+    font-size: 40px;
+    font-weight: 500;
+}
+
+.signup-form input[type = "text"] {
+    border:0;
+    background: none;
+    display: block;
+    margin: auto auto;
+    text-align: center;
+    border: 2px solid #3498db;
+    padding: 14px 10px;
+    width: 200px;
+    outline: none;
+    color: #9a9da0;
+    border-radius: 24px;
+    transition: 0.25s;
+}
+
+.signup-form input[type = "password"] {
+    border:0;
+    background: none;
+    display: block;
+    margin: auto auto;
+    text-align: center;
+    border: 2px solid #3498db;
+    padding: 14px 10px;
+    width: 200px;
+    outline: none;
+    color: #9a9da0;
+    border-radius: 24px;
+    transition: 0.25s;
+}
+
+.signup-form input[type = "text"]:focus {
+    width: 280px;
+    border-color: #2ecc71;
+    color: white;
+} 
+
+.signup-form input[type = "password"]:focus {
+    width: 280px;
+    border-color: #2ecc71;
+    color: white;
+} 
+
+.txtb{
+    margin: 20px 0;
+    background: rgba(255, 255, 255, .5);
+    border-radius: 6px;
+    color: #9a9da0;
+}
+
+.signup-btn[type = "submit"] {
+    border:0;
+    background: none;
+    display: block;
+    margin: 20px auto;
+    text-align: center;
+    border: 2px solid #2ecc71;
+    padding: 14px 40px;
+    outline: none;
+    color:#9a9da0;
+    border-radius: 24px;
+    transition: 0.25s;
+    cursor: pointer;
+}
+
+.signup-btn:hover{
+    background: #2ecc71;
+    color: white;
+}
+
+.signup-form a{
+    text-decoration: none;
+    color: #9a9da0;
+    font-size: 14px;
+    padding: 10px;
+    transition: 0.8s;
+    display: block;
+}
+
+.signup-form a:hover{
+    background: rgba(0, 0, 0, .3);
+}

@@ -7,11 +7,12 @@ Vue.component('login', {
 	},
 	template:
 		`
-		<div>
-			<form method="post" v-on:submit.prevent="login">
-				<label>Username:</label><input type="text" required v-model="username"> <br/>
-				<label>Password:</label><input type="password" required v-model="password"> <br/>
-				<button type="submit">Login</button>
+		<div class="signup-form">
+			<form class="box" method="post" v-on:submit.prevent="login">
+				<h1>Login</h1>
+				<input class="txtb" type="text" placeholder="Username" required v-model="username"> <br/>
+				<input class="txtb" type="password" placeholder="Password" required v-model="password"> <br/>
+				<input class="signup-btn" type="submit" value="Sign in">
 			</form>
 		</div>
 		`,

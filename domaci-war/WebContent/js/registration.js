@@ -8,12 +8,13 @@ Vue.component('registration', {
 	},
 	template:
 		`
-		<div>
-			<form method="post" v-on:submit.prevent="register">
-				<label>Username:</label><input type="text" required v-model="username"> <br/>
-				<label>Password:</label><input type="password" required v-model="password"> <br/>
-				<label>Retype Password:</label><input type="password" required v-model="retypePassword"> <br/>
-				<button type="submit">Register</button>
+		<div class="signup-form">
+			<form class="box" method="post" v-on:submit.prevent="register">
+				<h1>Registration</h1>
+				<input class="txtb" type="text" placeholder="Username" required v-model="username"> <br/>
+				<input class="txtb" type="password" placeholder="Password" required v-model="password"> <br/>
+				<input class="txtb" type="password" placeholder="Retype Password" required v-model="retypePassword"> <br/>
+				<input class="signup-btn" type="submit" value="Sign up">
 			</form>
 		</div>
 		`,
@@ -29,8 +30,7 @@ Vue.component('registration', {
 				
 				axios.post('rest/chat/users/register', user)
 					.then(function(response) {
-						window.location.href = '#/login'
-						alert("Successful registration!");
+						window.location.href = '#/login';
 						a.username = undefined;
 						a.password = undefined;
 						a.retypePassword = undefined;

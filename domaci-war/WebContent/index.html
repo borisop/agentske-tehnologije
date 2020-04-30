@@ -1,68 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Chat</title>
-<script src="js/jquery-1.11.0.js" ></script>
-<script src="js/vue.js"></script>
-<script src="js/vuex.js"></script>
-<script src="js/vue-router.js"></script>
-<script src="js/vue-resource.js"></script>
-<script src="js/axios.min.js"></script>
-<!--<script>
-var socket;
-var host = "ws://localhost:8080/domaci-war/ws";
-$(document).ready(function() {
-	$("#btnPost").click(function() {
-    	$.ajax({
-    		url: "rest/chat/post/asdfasdf",
-    		type:"POST",
-    		data: {},
-    		contentType:"application/json",
-    		dataType:"json",
-    		complete: function(data) {
-    			console.log('Sent message to the server.');
-    		}
-    	});
-	});
-	
-	try{
-	    socket = new WebSocket(host);
-	    console.log('connect: Socket Status: '+socket.readyState);
-	
-	    socket.onopen = function(){
-	   	 	console.log('onopen: Socket Status: '+socket.readyState+' (open)');
-	    }
-	
-	    socket.onmessage = function(msg){
-			let message = msg.data;
-			let messageElem = document.createElement('div');
-			messageElem.textContent = message;
-		    
-	   	 	console.log('onmessage: Received: '+ msg.data);
-	   	 	document.getElementById('consoleLog').append(messageElem);
-	    }
-	
-	    socket.onclose = function(){
-	    	socket = null;
-	    }			
-	
-	} catch(exception){
-	   	console.log('Error'+exception);
-	}
-});
-
-</script> --->
+	<meta charset="utf-8">
+	<title>Chat</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/main.css" rel="stylesheet">
+	<link href="css/registracija_style.css" rel="stylesheet">
+	<link href="css/messageForm.css" rel="stylesheet">
+	<link href="css/loggedUsers.css" rel="stylesheet">
+	<link href="css/chatMessages.css" rel="stylesheet">
+	<script src="js/jquery-1.11.0.js" ></script>
+	<script src="js/vue.js"></script>
+	<script src="js/vuex.js"></script>
+	<script src="js/vue-router.js"></script>
+	<script src="js/vue-resource.js"></script>
+	<script src="js/axios.min.js"></script>
 </head>
 <body>
 	<div id="app">
-		<ul>
-			<li v-if="!logged"><router-link to="/register"><a>Register</a></router-link></li>
-			<li v-if="!logged"><router-link to="/login"><a>Login</a></router-link></li>
-			<li v-else><router-link to="/login"><a v-on:click.prevent="logout">Logout</a></router-link></li>
-		</ul>
+		<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+			<div class="container">
+				<router-link class="logo navbar-brand" style="color:#9a9da0;" to="/"><a>HOME</a></router-link>
+				<ul class="navbar-nav ml-auto menu">
+					<li class="nav-item" v-if="!logged"><router-link class="nav-link" to="/register"><a>Sign up</a></router-link></li>
+					<li class="nav-item" v-if="!logged"><router-link class="nav-link" to="/login"><a>Sign in</a></router-link></li>
+					<li class="nav-item" v-else><router-link class="nav-link" to="/login"><a v-on:click.prevent="logout">Logout</a></router-link></li>
+				</ul>
+			</div>
+		</nav>
 		<div>
-			<router-view></router-view>
+			<div>
+				<div>
+					<router-view></router-view>
+				</div>
+			</div>
 		</div>
 	</div>
 	

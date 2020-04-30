@@ -1,0 +1,29 @@
+.users-logged {
+    color: #2ecc71;
+    padding: 4px 10px;
+    text-align: left;
+    margin: 3px 15px;
+}
+
+.users-logged:hover {
+    border: 0px solid #1f2326;
+    border-radius: 10px;
+    background: #1f2326;
+}
+
+.username:hover{
+    cursor: pointer;
+}
+
+.users-registered {
+    color: #9a9da0;
+    padding: 4px 10px;
+    text-align: left;
+    margin: 3px 15px;
+}
+
+.users-registered:hover {
+    border: 0px solid #1f2326;
+    border-radius: 10px;
+    background: #1f2326;
+}
