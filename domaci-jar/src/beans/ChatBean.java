@@ -45,13 +45,6 @@ public class ChatBean implements ChatRemote, ChatLocal {
 	@Resource(mappedName = "java:jboss/exported/jms/queue/mojQueue")
 	private Queue queue;
 	
-	@GET
-	@Path("/test")
-	@Produces(MediaType.TEXT_PLAIN)
-	public String test() {
-		return "OK";
-	}
-	
 	@POST
 	@Path("/post/{text}")
 	@Produces(MediaType.TEXT_PLAIN)
