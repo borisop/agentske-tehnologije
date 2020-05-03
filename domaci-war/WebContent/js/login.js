@@ -21,11 +21,10 @@ Vue.component('login', {
 			var a = this;
 			
 			var h = window.location.host;
-			var res = h.split(":");
 			
 			var host = {
-				"alias": res[0],
-				"address": res[1]
+				"alias": "",
+				"address": h
 			}
 			
 			var user = {

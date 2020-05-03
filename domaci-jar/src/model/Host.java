@@ -31,4 +31,8 @@ public class Host implements Serializable{
 	public Host() {
 		
 	}
+	@Override
+	public String toString() {
+		return "Alias: " + this.alias + " Address: " + this.address;
+	}
 }

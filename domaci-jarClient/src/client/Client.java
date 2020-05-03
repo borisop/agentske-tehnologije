@@ -15,7 +15,6 @@ public class Client {
 			String remoteName = "ejb:domaci-ear/domaci-jar/ChatBean!" + ChatRemote.class.getName();
 			System.err.println("Looking up for: " + remoteName);
 			ChatRemote chat = (ChatRemote) context.lookup(remoteName);
-			System.out.println("Server responded: " + chat.post("klijent"));
 		} catch(NamingException e) {
 			e.printStackTrace();
 		}

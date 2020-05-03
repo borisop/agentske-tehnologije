@@ -1,11 +1,15 @@
 package beans;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.ejb.LocalBean;
+import javax.ejb.Remote;
 import javax.ejb.Singleton;
 import javax.jms.ConnectionFactory;
 import javax.jms.ObjectMessage;
@@ -14,7 +18,6 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -25,45 +28,30 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+
+import model.Host;
 import model.Message;
 import model.User;
 
 @Singleton
 @Path("/chat")
+@Remote(ChatRemote.class)
 @LocalBean
 public class ChatBean implements ChatRemote, ChatLocal {
 	
 	private List<User> registeredUsers = new ArrayList<User>();
 	
-	private List<User> loggedInUsers = new ArrayList<User>();
+	public static List<User> loggedInUsers = new ArrayList<User>();
 	
 	private Map<String, List<Message>> messages = new HashMap<>();
-	
 	
 	@Resource(mappedName = "java:/ConnectionFactory")
 	private ConnectionFactory connectionFactory;
 	@Resource(mappedName = "java:jboss/exported/jms/queue/mojQueue")
 	private Queue queue;
-	
-	@POST
-	@Path("/post/{text}")
-	@Produces(MediaType.TEXT_PLAIN)
-	public String post(@PathParam("text") String text) {
-		System.out.println("Received message: " + text);
-		
-		try {
-			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
-			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			QueueSender sender = session.createSender(queue);
-			TextMessage message = session.createTextMessage();
-			message.setText(text);
-			sender.send(message);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		
-		return "OK";
-	}
 	
 	@POST
 	@Path("/users/register")
@@ -96,6 +84,11 @@ public class ChatBean implements ChatRemote, ChatLocal {
 		
 		loggedInUsers.add(user);
 		
+		ResteasyClient client = new ResteasyClientBuilder().build();
+		ResteasyWebTarget rtarget = client.target("http://" + user.getHost().getAddress() + "/domaci-war/rest/cluster");
+		HostCluster rest = rtarget.proxy(HostCluster.class);
+		rest.informNodes(user);
+		
 		return Response.status(200).build();
 	}
 
@@ -106,11 +99,17 @@ public class ChatBean implements ChatRemote, ChatLocal {
 		return Response.ok(registeredUsers).build();
 	}
 	
+//	@GET
+//	@Path("/users/loggedIn")
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Response loggedIn() {
+//		return Response.ok(loggedInUsers).build();
+//	}
 	@GET
 	@Path("/users/loggedIn")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response loggedIn() {
-		return Response.ok(loggedInUsers).build();
+	public List<User> loggedIn() {
+		return loggedInUsers;
 	}
 	
 	@DELETE
@@ -122,7 +121,12 @@ public class ChatBean implements ChatRemote, ChatLocal {
 			if (u.getUsername().equals(username)) {
 				user = new User(u);
 				loggedInUsers.remove(u);
-
+				
+				ResteasyClient client = new ResteasyClientBuilder().build();
+				ResteasyWebTarget rtarget = client.target("http://" + user.getHost().getAddress() + "/domaci-war/rest/cluster");
+				HostCluster rest = rtarget.proxy(HostCluster.class);
+				rest.informNodes(user);
+				
 				return Response.ok(user).build();
 			}
 		}
@@ -134,16 +138,34 @@ public class ChatBean implements ChatRemote, ChatLocal {
 	@Path("/messages/all")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response sendMessageAll(Message text) {
-		System.out.println("Received message: " + text.getContent());
+		Set<String> addrs = new HashSet<>();
+		for (User u : loggedInUsers) {
+			if (u.getUsername().equals(text.getSender().getUsername())) {
+				text.getSender().setHost(new Host("", u.getHost().getAddress()));
+			}
+			addrs.add(u.getHost().getAddress());
+		}
+		addrs.remove(text.getSender().getHost().getAddress());
 		
 		try {
 			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
 			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueSender sender = session.createSender(queue);
 			ObjectMessage message = session.createObjectMessage(text);
+			
+			message.setStringProperty("sender", text.getSender().getUsername());
+			
 			sender.send(message);
 		} catch(Exception e) {
 			e.printStackTrace();
+		}
+		
+		Iterator<String> i = addrs.iterator();
+		while(i.hasNext()) {
+			ResteasyClient client = new ResteasyClientBuilder().build();
+			ResteasyWebTarget rtarget = client.target("http://" + i.next() + "/domaci-war/rest/cluster");
+			HostCluster rest = rtarget.proxy(HostCluster.class);
+			rest.sendMessageAll(text);	
 		}
 		
 		sendAll(text);
@@ -155,28 +177,40 @@ public class ChatBean implements ChatRemote, ChatLocal {
 	@Path("/messages/user")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response sendMessageUser(Message text) {
-		System.out.println("Received message: " + text.getContent());
-		System.out.println("Receiver: " + text.getReciever().getUsername());
-		
-		if (checkUsername(text.getReciever().getUsername())) {
+		if (checkUsernameLogin(text.getReciever().getUsername())) {
 			return Response.status(400).entity("Reciever with username " + text.getReciever().getUsername() + " doesn't exist!").build();
 		}
 		
-		try {
-			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
-			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			QueueSender sender = session.createSender(queue);
-			ObjectMessage message = session.createObjectMessage(text);
-
-			message.setStringProperty("reciever", text.getReciever().getUsername());
-			message.setStringProperty("sender", text.getSender().getUsername());
-			
-			sender.send(message);
-		} catch(Exception e) {
-			e.printStackTrace();
+		for (User u : loggedInUsers) {
+			if (u.getUsername().equals(text.getSender().getUsername())) {
+				text.getSender().setHost(new Host("", u.getHost().getAddress()));
+			} else if (u.getUsername().equals(text.getReciever().getUsername())) {
+				text.getReciever().setHost(new Host("", u.getHost().getAddress()));
+			}
 		}
 		
-		sendMessage(text);
+		if (text.getSender().getHost().getAddress().equals(text.getReciever().getHost().getAddress())) {
+			try {
+				QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
+				QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+				QueueSender sender = session.createSender(queue);
+				ObjectMessage message = session.createObjectMessage(text);
+	
+				message.setStringProperty("reciever", text.getReciever().getUsername());
+				message.setStringProperty("sender", text.getSender().getUsername());
+				
+				sender.send(message);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			sendMessage(text);
+		} else {
+			ResteasyClient client = new ResteasyClientBuilder().build();
+			ResteasyWebTarget rtarget = client.target("http://" + text.getReciever().getHost().getAddress() + "/domaci-war/rest/cluster");
+			HostCluster rest = rtarget.proxy(HostCluster.class);
+			rest.sendMessageUser(text);
+		}
 		
 		return Response.ok(text).build();
 	}
@@ -191,6 +225,51 @@ public class ChatBean implements ChatRemote, ChatLocal {
 		}
 		
 		return Response.ok(messages.get(user)).build();
+	}
+	
+	public void messageFromOtherNode(Message text) {
+		try {
+			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
+			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			QueueSender sender = session.createSender(queue);
+			ObjectMessage message = session.createObjectMessage(text);
+
+			message.setStringProperty("reciever", text.getReciever().getUsername());
+			message.setStringProperty("sender", text.getSender().getUsername());
+			
+			sender.send(message);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		sendMessage(text);
+	}
+	
+	public void messageFromOtherNodeAll(Message text) {
+		try {
+			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
+			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			QueueSender sender = session.createSender(queue);
+			ObjectMessage message = session.createObjectMessage(text);
+
+			message.setStringProperty("sender", text.getSender().getUsername());
+			
+			sender.send(message);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		sendAll(text);
+	}
+	
+	public void informOtherNodes(String msg) {
+		try {
+			QueueConnection connection = (QueueConnection) connectionFactory.createConnection("guest", "guest.guest.1");
+			QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			QueueSender sender = session.createSender(queue);
+			ObjectMessage message = session.createObjectMessage(msg);
+			sender.send(message);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
@@ -218,6 +297,15 @@ public class ChatBean implements ChatRemote, ChatLocal {
 	
 	public boolean checkUsername(String username) {
 		for (User u : registeredUsers) {
+			if (u.getUsername().equals(username)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean checkUsernameLogin(String username) {
+		for (User u : loggedInUsers) {
 			if (u.getUsername().equals(username)) {
 				return false;
 			}
