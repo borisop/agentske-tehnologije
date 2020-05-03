@@ -108,7 +108,7 @@ Vue.component('homepage', {
 			    this.$store.state.socket.onmessage = function(msg){
 			    	var users = document.getElementById('loggedInUsers');
 		    		var temp = null;
-			    	if (msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT") {
+			    	if (msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT" || msg.data === "\"USER_LOGGED_IN\"" || msg.data === "\"USER_LOGGED_OUT\"") {
 			    		axios.get('rest/chat/users/loggedIn')
 						.then(function(response) {
 							a.loggedUsers = response.data;
@@ -123,7 +123,6 @@ Vue.component('homepage', {
 						messageElem.textContent = "[" + new Date(message.date).toLocaleString() + "] " 
 												+ message.sender.username + ":" + message.content;
 						messageElem.classList.add("message-container")
-//				   	 	console.log('onmessage: Received: '+ msg.data);
 				   	 	document.getElementById('consoleLog').append(messageElem);
 			    	}
 			    	if ((msg.data === "USER_LOGGED_IN" || msg.data === "USER_LOGGED_OUT") && temp != null) {
@@ -156,14 +155,19 @@ Vue.component('homepage', {
 			var rec = {
 				"username": a.reciever
 			}
+			var date = new Date();
 			
-			
+			let messageElem = document.createElement('div');
+			messageElem.textContent = "[" + new Date(date).toLocaleString() + "] " 
+									+ sender.username + ":" + a.content;
+			messageElem.classList.add("message-container")
+	   	 	document.getElementById('consoleLog').append(messageElem);
 			
 			if (a.reciever === "") {	
 				var message = {
 					"reciever": null,
 					"sender": sender,
-					"date": new Date(),
+					"date": date,
 					"subject": a.subject,
 					"content": a.content
 				}

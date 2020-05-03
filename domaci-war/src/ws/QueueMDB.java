@@ -1,5 +1,7 @@
 package ws;
 
+import java.util.Map;
+
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
@@ -30,16 +32,24 @@ public class QueueMDB implements MessageListener {
 			ObjectMapper mapper = new ObjectMapper();
 			String json = mapper.writeValueAsString(omsg.getObject());
 			
-			reciever = omsg.getStringProperty("reciever");
-			sender = omsg.getStringProperty("sender");
-			
-			Session sessionReciever = null;
-			if (reciever != null) {
-				sessionReciever = ws.sessions.get(reciever);
-				ws.echoTextMessage(sessionReciever, json);
+			if (json.equals("\"USER_LOGGED_IN\"") || json.equals("\"USER_LOGGED_IN\"")) {
+				ws.echoTextMessage(null, json);
+			} else {
+				reciever = omsg.getStringProperty("reciever");
+				sender = omsg.getStringProperty("sender");
+				
+				Session sessionReciever = null;
+				if (reciever != null) {
+					sessionReciever = ws.sessions.get(reciever);
+					ws.echoTextMessage(sessionReciever, json);
+				} else {
+					for (Map.Entry<String, Session> entry : ws.sessions.entrySet()) {
+		        		if (!entry.getKey().equals(sender)) {
+							ws.echoTextMessage(entry.getValue(), json);
+						}
+					}
+				}
 			}
-			Session sessionSender = ws.sessions.get(sender);
-			ws.echoTextMessage(sessionSender, json);
 		} catch (JMSException e) {
 			e.printStackTrace();
 		} catch(Exception e1) {
